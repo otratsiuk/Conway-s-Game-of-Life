@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <functional>
 #include <iostream>
+#include <string>
 #include <unistd.h>
 #include <vector>
 
@@ -35,23 +36,6 @@ int count_neighbours(int curr_i, int curr_j,
   return sum;
 }
 
-bool is_alive(std::vector<std::vector<int>> &generation) {
-  bool alive = true;
-  int sum = 0;
-
-  for (auto &rows : generation) {
-    for (auto &cellar : rows) {
-      sum += cellar;
-    }
-  }
-
-  if (sum == 0) {
-    alive = false;
-  }
-
-  return alive;
-}
-
 int count_alive_cells(std::vector<std::vector<int>> cells) {
   int alive_cells = 0;
 
@@ -68,6 +52,7 @@ int count_alive_cells(std::vector<std::vector<int>> cells) {
 
 std::vector<std::vector<int>>
 create_next_generation(std::vector<std::vector<int>> curr_generation) {
+
   std::vector<std::vector<int>> next_generation = curr_generation;
 
   for (int i = 0; i < 10; i++) {
@@ -87,6 +72,17 @@ create_next_generation(std::vector<std::vector<int>> curr_generation) {
   }
 
   return next_generation;
+}
+
+void life_to_console(std::vector<std::vector<int>> curr_generation) {
+
+  std::cout << "\n";
+  for (int i = 0; i < curr_generation.size(); i++) {
+    for (int j = 0; j < curr_generation[0].size(); j++) {
+      std::cout << curr_generation[i][j] << " ";
+    }
+    std::cout << "\n";
+  }
 }
 
 void draw_galaxy(sf::RenderWindow &window) {
@@ -117,64 +113,102 @@ void draw_galaxy(sf::RenderWindow &window) {
   window.draw(horizontal_lines);
 }
 
-void draw_cells(std::vector<std::vector<int>> curr_generation,
-                sf::RenderWindow &window) {
-
-  sf::RectangleShape alive_cell(sf::Vector2f(50.f, 50.f));
+void draw_life(std::vector<std::vector<int>> curr_generation,
+               sf::RenderWindow &window) {
+  sf::RectangleShape alive_cell(sf::Vector2f(40.f, 40.f));
   alive_cell.setFillColor(sf::Color::Green);
 
   std::vector<std::vector<int>> prev_generation = curr_generation;
 
-  while (window.isOpen()) {
-    sf::Event event;
-    while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed)
+  do {
+    sf::Event urgent_event;
+    while (window.pollEvent(urgent_event)) {
+      if (urgent_event.type == sf::Event::Closed)
         window.close();
     }
-    do {
-      window.clear();
-      draw_galaxy(window);
 
-      std::cout << "\n";
-      for (int i = 0; i < curr_generation.size(); i++) {
-        for (int j = 0; j < curr_generation[0].size(); j++) {
-          std::cout << curr_generation[i][j] << " ";
+    window.clear();
+    draw_galaxy(window);
 
-          if (curr_generation[i][j] == 1) {
-            alive_cell.setPosition(i * 50, j * 50);
-            window.draw(alive_cell);
-          }
+    life_to_console(curr_generation);
+    for (int i = 0; i < curr_generation.size(); i++) {
+      for (int j = 0; j < curr_generation[0].size(); j++) {
+
+        if (curr_generation[i][j] == 1) {
+          alive_cell.setPosition(i * 50 + 5, j * 50 + 5);
+          window.draw(alive_cell);
         }
-        std::cout << "\n";
       }
+    }
 
-      window.display();
-      sleep(1);
+    window.display();
+    usleep(500000);
 
-      prev_generation = curr_generation;
-      curr_generation = create_next_generation(curr_generation);
-    } while (curr_generation != prev_generation);
+    prev_generation = curr_generation;
+    curr_generation = create_next_generation(curr_generation);
+  } while (/*!(curr_generation == prev_generation) && */ window.isOpen());
+}
 
-    std::cout << "Game over "
-              << "\n";
+void text_display(std::string message, float x, float y,
+                  sf::RenderWindow &window) {
+  sf::Text text;
+  sf::Font font;
+  font.loadFromFile("Ubuntu-Medium.ttf");
+  text.setFont(font);
+  text.setString(message);
+  text.setCharacterSize(36);
+  text.setFillColor(sf::Color::Red);
+  text.setPosition(sf::Vector2f(x, y));
+
+  window.clear();
+  window.draw(text);
+  window.display();
+}
+
+void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
+  int key;
+  std::cout << "choose pattern: ";
+  std::cin >> key;
+  switch (key) {
+    // Gilder
+  case 1: {
+    curr_generation[4][4] = 1;
+    curr_generation[5][5] = 1;
+    curr_generation[6][3] = 1;
+    curr_generation[6][5] = 1;
+    break;
+  }
+    //  Small exploder
+  case 2: {
+    curr_generation[3][4] = 1;
+    curr_generation[4][3] = 1;
+    curr_generation[4][4] = 1;
+    curr_generation[4][5] = 1;
+    curr_generation[5][3] = 1;
+    curr_generation[5][5] = 1;
+    curr_generation[6][4] = 1;
+  }
+  default:
+    break;
   }
 }
 
 int main() {
   std::vector<std::vector<int>> curr_generation(10, std::vector<int>(10, 0));
-  std::vector<std::vector<int>> next_generation(10, std::vector<int>(10, 0));
 
-  curr_generation[9][0] = 1;
-  curr_generation[9][1] = 1;
-  curr_generation[0][9] = 1;
-  curr_generation[2][9] = 1;
-  curr_generation[4][0] = 1;
-  curr_generation[9][9] = 1;
-  curr_generation[1][0] = 1;
+  choose_pattern(curr_generation);
 
-  sf::RenderWindow window(sf::VideoMode(500, 500), "Game of life");
+  sf::RenderWindow window(sf::VideoMode(500, 500), "Conway's Game of Life");
 
-  draw_cells(curr_generation, window);
+  draw_life(curr_generation, window);
+
+  text_display("Game is over", 150, 200, window);
+
+  sf::Event last_event;
+  while (window.waitEvent(last_event)) {
+    if (last_event.type == sf::Event::Closed)
+      window.close();
+  }
 
   return 0;
 }
