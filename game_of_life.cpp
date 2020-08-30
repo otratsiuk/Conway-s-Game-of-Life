@@ -15,17 +15,17 @@ int count_neighbours(int curr_i, int curr_j,
       int neighbour_i = i;
       int neighbour_j = j;
 
-      if (i == 10) {
+      if (i == 25) {
         neighbour_i = 0;
       }
-      if (j == 10) {
+      if (j == 25) {
         neighbour_j = 0;
       }
       if (i == -1) {
-        neighbour_i = 9;
+        neighbour_i = 24;
       }
       if (j == -1) {
-        neighbour_j = 9;
+        neighbour_j = 24;
       }
 
       sum += generation[neighbour_i][neighbour_j];
@@ -55,8 +55,8 @@ create_next_generation(std::vector<std::vector<int>> curr_generation) {
 
   std::vector<std::vector<int>> next_generation = curr_generation;
 
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 10; j++) {
+  for (int i = 0; i < 25; i++) {
+    for (int j = 0; j < 25; j++) {
       int neighbours = count_neighbours(i, j, curr_generation);
 
       if (curr_generation[i][j] == 0 && neighbours == 3) {
@@ -86,27 +86,27 @@ void life_to_console(std::vector<std::vector<int>> curr_generation) {
 }
 
 void draw_galaxy(sf::RenderWindow &window) {
-  sf::VertexArray vertical_lines(sf::Lines, 18);
-  sf::VertexArray horizontal_lines(sf::Lines, 18);
+  sf::VertexArray vertical_lines(sf::Lines, 50);
+  sf::VertexArray horizontal_lines(sf::Lines, 48);
 
-  for (int i = 0, pos = 50; i < 18; i++) {
+  for (int i = 0, pos = 25; i < 48; i++) {
     if (i % 2 == 0) {
-      vertical_lines[i].position = sf::Vector2f(0, pos);
+      horizontal_lines[i].position = sf::Vector2f(0, pos);
     } else {
-      vertical_lines[i].position = sf::Vector2f(500, pos);
-      pos += 50;
-    }
-    vertical_lines[i].color = sf::Color::Green;
-  }
-
-  for (int i = 0, pos = 50; i < 18; i++) {
-    if (i % 2 == 0) {
-      horizontal_lines[i].position = sf::Vector2f(pos, 0);
-    } else {
-      horizontal_lines[i].position = sf::Vector2f(pos, 500);
-      pos += 50;
+      horizontal_lines[i].position = sf::Vector2f(625, pos);
+      pos += 25;
     }
     horizontal_lines[i].color = sf::Color::Green;
+  }
+
+  for (int i = 0, pos = 25; i < 50; i++) {
+    if (i % 2 == 0) {
+      vertical_lines[i].position = sf::Vector2f(pos, 0);
+    } else {
+      vertical_lines[i].position = sf::Vector2f(pos, 625);
+      pos += 25;
+    }
+    vertical_lines[i].color = sf::Color::Green;
   }
 
   window.draw(vertical_lines);
@@ -115,52 +115,44 @@ void draw_galaxy(sf::RenderWindow &window) {
 
 void draw_life(std::vector<std::vector<int>> curr_generation,
                sf::RenderWindow &window) {
-  sf::RectangleShape alive_cell(sf::Vector2f(40.f, 40.f));
+  sf::RectangleShape alive_cell(sf::Vector2f(15.f, 15.f));
   alive_cell.setFillColor(sf::Color::Green);
 
-  std::vector<std::vector<int>> prev_generation = curr_generation;
+  sf::Event urgent_event;
+  while (window.pollEvent(urgent_event)) {
+    if (urgent_event.type == sf::Event::Closed)
+      window.close();
+  }
 
-  do {
-    sf::Event urgent_event;
-    while (window.pollEvent(urgent_event)) {
-      if (urgent_event.type == sf::Event::Closed)
-        window.close();
-    }
+  window.clear();
+  draw_galaxy(window);
 
-    window.clear();
-    draw_galaxy(window);
+  for (int i = 0; i < curr_generation.size(); i++) {
+    for (int j = 0; j < curr_generation[0].size(); j++) {
 
-    life_to_console(curr_generation);
-    for (int i = 0; i < curr_generation.size(); i++) {
-      for (int j = 0; j < curr_generation[0].size(); j++) {
-
-        if (curr_generation[i][j] == 1) {
-          alive_cell.setPosition(i * 50 + 5, j * 50 + 5);
-          window.draw(alive_cell);
-        }
+      if (curr_generation[i][j] == 1) {
+        alive_cell.setPosition(j * 25 + 5, i * 25 + 5);
+        window.draw(alive_cell);
       }
     }
+  }
 
-    window.display();
-    usleep(500000);
-
-    prev_generation = curr_generation;
-    curr_generation = create_next_generation(curr_generation);
-  } while (/*!(curr_generation == prev_generation) && */ window.isOpen());
+  window.display();
+  usleep(300000);
 }
 
-void text_display(std::string message, float x, float y,
+void text_display(std::string message, float x, float y, int size,
                   sf::RenderWindow &window) {
   sf::Text text;
   sf::Font font;
   font.loadFromFile("Ubuntu-Medium.ttf");
   text.setFont(font);
   text.setString(message);
-  text.setCharacterSize(36);
+  text.setCharacterSize(size);
   text.setFillColor(sf::Color::Red);
   text.setPosition(sf::Vector2f(x, y));
 
-  window.clear();
+  // window.clear();
   window.draw(text);
   window.display();
 }
@@ -175,6 +167,7 @@ void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
     curr_generation[4][4] = 1;
     curr_generation[5][5] = 1;
     curr_generation[6][3] = 1;
+    curr_generation[6][4] = 1;
     curr_generation[6][5] = 1;
     break;
   }
@@ -188,21 +181,47 @@ void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
     curr_generation[5][5] = 1;
     curr_generation[6][4] = 1;
   }
+  // Exploder
+  case 3: {
+    curr_generation[2][2] = 1;
+    curr_generation[2][4] = 1;
+    curr_generation[2][6] = 1;
+    curr_generation[3][2] = 1;
+    curr_generation[3][6] = 1;
+    curr_generation[4][2] = 1;
+    curr_generation[4][6] = 1;
+    curr_generation[5][2] = 1;
+    curr_generation[5][6] = 1;
+    curr_generation[6][2] = 1;
+    curr_generation[6][4] = 1;
+    curr_generation[6][6] = 1;
+  }
   default:
     break;
   }
 }
 
 int main() {
-  std::vector<std::vector<int>> curr_generation(10, std::vector<int>(10, 0));
+  std::vector<std::vector<int>> curr_generation(25, std::vector<int>(25, 0));
+  std::vector<std::vector<int>> prev_generation(25, std::vector<int>(25, 0));
 
   choose_pattern(curr_generation);
 
-  sf::RenderWindow window(sf::VideoMode(500, 500), "Conway's Game of Life");
+  sf::RenderWindow window(sf::VideoMode(725, 625), "Conway's Game of Life");
 
-  draw_life(curr_generation, window);
+  int generation_counter = 0;
 
-  text_display("Game is over", 150, 200, window);
+  do {
+    prev_generation = curr_generation;
+    curr_generation = create_next_generation(curr_generation);
+
+    life_to_console(curr_generation);
+    draw_life(curr_generation, window);
+
+  } while (!(curr_generation == prev_generation) && window.isOpen());
+
+  window.clear();
+  text_display("Game is over", 250, 250, 36, window);
 
   sf::Event last_event;
   while (window.waitEvent(last_event)) {
