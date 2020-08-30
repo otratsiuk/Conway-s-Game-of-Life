@@ -5,6 +5,12 @@
 #include <unistd.h>
 #include <vector>
 
+const auto FIELD_SIZE = 25;
+const auto CELL_SIZE = 25;
+const auto WINDOW_X = 725;
+const auto WINDOW_Y = 625;
+const auto SPARE_FIELD_WIDTH = 100;
+
 int count_neighbours(int curr_i, int curr_j,
                      std::vector<std::vector<int>> &generation) {
   int sum = 0;
@@ -15,17 +21,17 @@ int count_neighbours(int curr_i, int curr_j,
       int neighbour_i = i;
       int neighbour_j = j;
 
-      if (i == 25) {
+      if (i == FIELD_SIZE) {
         neighbour_i = 0;
       }
-      if (j == 25) {
+      if (j == FIELD_SIZE) {
         neighbour_j = 0;
       }
       if (i == -1) {
-        neighbour_i = 24;
+        neighbour_i = FIELD_SIZE - 1;
       }
       if (j == -1) {
-        neighbour_j = 24;
+        neighbour_j = FIELD_SIZE - 1;
       }
 
       sum += generation[neighbour_i][neighbour_j];
@@ -55,8 +61,8 @@ create_next_generation(std::vector<std::vector<int>> curr_generation) {
 
   std::vector<std::vector<int>> next_generation = curr_generation;
 
-  for (int i = 0; i < 25; i++) {
-    for (int j = 0; j < 25; j++) {
+  for (int i = 0; i < FIELD_SIZE; i++) {
+    for (int j = 0; j < FIELD_SIZE; j++) {
       int neighbours = count_neighbours(i, j, curr_generation);
 
       if (curr_generation[i][j] == 0 && neighbours == 3) {
@@ -77,8 +83,8 @@ create_next_generation(std::vector<std::vector<int>> curr_generation) {
 void life_to_console(std::vector<std::vector<int>> curr_generation) {
 
   std::cout << "\n";
-  for (int i = 0; i < curr_generation.size(); i++) {
-    for (int j = 0; j < curr_generation[0].size(); j++) {
+  for (int i = 0; i < FIELD_SIZE; i++) {
+    for (int j = 0; j < FIELD_SIZE; j++) {
       std::cout << curr_generation[i][j] << " ";
     }
     std::cout << "\n";
@@ -89,22 +95,23 @@ void draw_galaxy(sf::RenderWindow &window) {
   sf::VertexArray vertical_lines(sf::Lines, 50);
   sf::VertexArray horizontal_lines(sf::Lines, 48);
 
-  for (int i = 0, pos = 25; i < 48; i++) {
+  for (int i = 0, pos = CELL_SIZE; i < 48; i++) {
     if (i % 2 == 0) {
       horizontal_lines[i].position = sf::Vector2f(0, pos);
     } else {
-      horizontal_lines[i].position = sf::Vector2f(625, pos);
-      pos += 25;
+      horizontal_lines[i].position =
+          sf::Vector2f(WINDOW_X - SPARE_FIELD_WIDTH, pos);
+      pos += CELL_SIZE;
     }
     horizontal_lines[i].color = sf::Color::Green;
   }
 
-  for (int i = 0, pos = 25; i < 50; i++) {
+  for (int i = 0, pos = CELL_SIZE; i < 50; i++) {
     if (i % 2 == 0) {
       vertical_lines[i].position = sf::Vector2f(pos, 0);
     } else {
-      vertical_lines[i].position = sf::Vector2f(pos, 625);
-      pos += 25;
+      vertical_lines[i].position = sf::Vector2f(pos, WINDOW_Y);
+      pos += CELL_SIZE;
     }
     vertical_lines[i].color = sf::Color::Green;
   }
@@ -115,7 +122,8 @@ void draw_galaxy(sf::RenderWindow &window) {
 
 void draw_life(std::vector<std::vector<int>> curr_generation,
                sf::RenderWindow &window) {
-  sf::RectangleShape alive_cell(sf::Vector2f(15.f, 15.f));
+  sf::RectangleShape alive_cell(
+      sf::Vector2f(CELL_SIZE - 10.f, CELL_SIZE - 10.f));
   alive_cell.setFillColor(sf::Color::Green);
 
   sf::Event urgent_event;
@@ -131,14 +139,14 @@ void draw_life(std::vector<std::vector<int>> curr_generation,
     for (int j = 0; j < curr_generation[0].size(); j++) {
 
       if (curr_generation[i][j] == 1) {
-        alive_cell.setPosition(j * 25 + 5, i * 25 + 5);
+        alive_cell.setPosition(j * CELL_SIZE + 5, i * CELL_SIZE + 5);
         window.draw(alive_cell);
       }
     }
   }
 
   window.display();
-  usleep(300000);
+  usleep(200000);
 }
 
 void text_display(std::string message, float x, float y, int size,
@@ -201,13 +209,19 @@ void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
   }
 }
 
+void get_pattern(std::vector<std::vector<int>> &curr_generation,
+                 sf::RenderWindow window) {}
+
 int main() {
-  std::vector<std::vector<int>> curr_generation(25, std::vector<int>(25, 0));
-  std::vector<std::vector<int>> prev_generation(25, std::vector<int>(25, 0));
+  std::vector<std::vector<int>> curr_generation(
+      FIELD_SIZE, std::vector<int>(FIELD_SIZE, 0));
+  std::vector<std::vector<int>> prev_generation(
+      FIELD_SIZE, std::vector<int>(FIELD_SIZE, 0));
 
   choose_pattern(curr_generation);
 
-  sf::RenderWindow window(sf::VideoMode(725, 625), "Conway's Game of Life");
+  sf::RenderWindow window(sf::VideoMode(WINDOW_X, WINDOW_Y),
+                          "Conway's Game of Life");
 
   int generation_counter = 0;
 
@@ -217,6 +231,8 @@ int main() {
 
     life_to_console(curr_generation);
     draw_life(curr_generation, window);
+
+    generation_counter++;
 
   } while (!(curr_generation == prev_generation) && window.isOpen());
 
