@@ -7,9 +7,9 @@
 
 const auto FIELD_SIZE = 25;
 const auto CELL_SIZE = 25;
-const auto WINDOW_X = 725;
+const auto WINDOW_X = 825;
 const auto WINDOW_Y = 625;
-const auto SPARE_FIELD_WIDTH = 100;
+const auto SPARE_FIELD_WIDTH = 200;
 
 int count_neighbours(int curr_i, int curr_j,
                      std::vector<std::vector<int>> &generation) {
@@ -126,15 +126,6 @@ void draw_life(std::vector<std::vector<int>> curr_generation,
       sf::Vector2f(CELL_SIZE - 10.f, CELL_SIZE - 10.f));
   alive_cell.setFillColor(sf::Color::Green);
 
-  sf::Event urgent_event;
-  while (window.pollEvent(urgent_event)) {
-    if (urgent_event.type == sf::Event::Closed)
-      window.close();
-  }
-
-  window.clear();
-  draw_galaxy(window);
-
   for (int i = 0; i < curr_generation.size(); i++) {
     for (int j = 0; j < curr_generation[0].size(); j++) {
 
@@ -144,9 +135,6 @@ void draw_life(std::vector<std::vector<int>> curr_generation,
       }
     }
   }
-
-  window.display();
-  usleep(200000);
 }
 
 void text_display(std::string message, float x, float y, int size,
@@ -160,9 +148,18 @@ void text_display(std::string message, float x, float y, int size,
   text.setFillColor(sf::Color::Red);
   text.setPosition(sf::Vector2f(x, y));
 
-  // window.clear();
   window.draw(text);
   window.display();
+}
+
+void draw_button(float x, float y, sf::RenderWindow &window) {
+  sf::RectangleShape button(sf::Vector2f(150, 50));
+  button.setFillColor(sf::Color::Transparent);
+  button.setOutlineColor(sf::Color::Green);
+  button.setOutlineThickness(5);
+
+  button.setPosition(sf::Vector2f(x, y));
+  window.draw(button);
 }
 
 void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
@@ -210,40 +207,94 @@ void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
 }
 
 void get_pattern(std::vector<std::vector<int>> &curr_generation,
-                 sf::RenderWindow window) {}
+                 sf::RenderWindow &window) {
+  int x = 0;
+  int y = 0;
+
+  draw_galaxy(window);
+  draw_button(650, 550, window);
+  window.display();
+
+  sf::Event event;
+  while (window.waitEvent(event) && x < 25) {
+    switch (event.type) {
+    case sf::Event::Closed: {
+      window.close();
+      break;
+    }
+    case sf::Event::MouseButtonPressed: {
+      if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+        x = sf::Mouse::getPosition(window).x / CELL_SIZE;
+        y = sf::Mouse::getPosition(window).y / CELL_SIZE;
+        if (x < 25) {
+          curr_generation[y][x] = 1;
+          draw_life(curr_generation, window);
+          window.display();
+          life_to_console(curr_generation);
+        }
+        std::cout << x << "\n";
+        std::cout << y << "\n";
+      }
+      break;
+    }
+    default:
+      break;
+    }
+  }
+}
+
+void check_window(sf::RenderWindow &window) {
+  sf::Event event;
+  while (window.pollEvent(event)) {
+    if (event.type == sf::Event::Closed)
+      window.close();
+  }
+}
 
 int main() {
-  std::vector<std::vector<int>> curr_generation(
-      FIELD_SIZE, std::vector<int>(FIELD_SIZE, 0));
-  std::vector<std::vector<int>> prev_generation(
-      FIELD_SIZE, std::vector<int>(FIELD_SIZE, 0));
-
-  choose_pattern(curr_generation);
 
   sf::RenderWindow window(sf::VideoMode(WINDOW_X, WINDOW_Y),
                           "Conway's Game of Life");
 
-  int generation_counter = 0;
+  while (window.isOpen()) {
+    window.clear();
 
-  do {
-    prev_generation = curr_generation;
-    curr_generation = create_next_generation(curr_generation);
+    std::vector<std::vector<int>> curr_generation(
+        FIELD_SIZE, std::vector<int>(FIELD_SIZE, 0));
+    std::vector<std::vector<int>> prev_generation(
+        FIELD_SIZE, std::vector<int>(FIELD_SIZE, 0));
 
-    life_to_console(curr_generation);
-    draw_life(curr_generation, window);
+    check_window(window);
 
-    generation_counter++;
+    get_pattern(curr_generation, window);
 
-  } while (!(curr_generation == prev_generation) && window.isOpen());
+    int generation_counter = 0;
+    do {
 
-  window.clear();
-  text_display("Game is over", 250, 250, 36, window);
+      check_window(window);
 
-  sf::Event last_event;
-  while (window.waitEvent(last_event)) {
-    if (last_event.type == sf::Event::Closed)
-      window.close();
+      prev_generation = curr_generation;
+      curr_generation = create_next_generation(curr_generation);
+
+      life_to_console(curr_generation);
+
+      window.clear();
+      draw_galaxy(window);
+      draw_button(650, 550, window);
+      draw_life(curr_generation, window);
+      window.display();
+      usleep(200000);
+
+      generation_counter++;
+
+    } while (!(curr_generation == prev_generation) && window.isOpen());
+    sleep(3);
+    window.clear();
+    text_display("Game is over", 250, 250, 36, window);
+    sleep(3);
   }
+
+  check_window(window);
 
   return 0;
 }
