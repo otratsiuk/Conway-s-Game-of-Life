@@ -1,5 +1,4 @@
 #include <SFML/Graphics.hpp>
-#include <functional>
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -10,6 +9,12 @@ const auto CELL_SIZE = 25;
 const auto WINDOW_X = 825;
 const auto WINDOW_Y = 625;
 const auto SPARE_FIELD_WIDTH = 200;
+const auto BUTTON_X = 150;
+const auto BUTTON_Y = 50;
+const auto START_BUTTON_X = 650;
+const auto START_BUTTON_Y = 550;
+const auto NEXT_BUTTON_X = 650;
+const auto NEXT_BUTTON_Y = 25;
 
 int count_neighbours(int curr_i, int curr_j,
                      std::vector<std::vector<int>> &generation) {
@@ -137,8 +142,8 @@ void draw_life(std::vector<std::vector<int>> curr_generation,
   }
 }
 
-void text_display(std::string message, float x, float y, int size,
-                  sf::RenderWindow &window) {
+void draw_text(std::string message, float x, float y, int size,
+               sf::RenderWindow &window) {
   sf::Text text;
   sf::Font font;
   font.loadFromFile("Ubuntu-Medium.ttf");
@@ -149,74 +154,58 @@ void text_display(std::string message, float x, float y, int size,
   text.setPosition(sf::Vector2f(x, y));
 
   window.draw(text);
-  window.display();
 }
 
-void draw_button(float x, float y, sf::RenderWindow &window) {
-  sf::RectangleShape button(sf::Vector2f(150, 50));
+void draw_button(float x, float y, std::string message,
+                 sf::RenderWindow &window) {
+  sf::RectangleShape button(sf::Vector2f(BUTTON_X, BUTTON_Y));
   button.setFillColor(sf::Color::Transparent);
   button.setOutlineColor(sf::Color::Green);
   button.setOutlineThickness(5);
+
+  draw_text(message, x + 40, y + 15, 18, window);
 
   button.setPosition(sf::Vector2f(x, y));
   window.draw(button);
 }
 
-void choose_pattern(std::vector<std::vector<int>> &curr_generation) {
-  int key;
-  std::cout << "choose pattern: ";
-  std::cin >> key;
-  switch (key) {
-    // Gilder
-  case 1: {
-    curr_generation[4][4] = 1;
-    curr_generation[5][5] = 1;
-    curr_generation[6][3] = 1;
-    curr_generation[6][4] = 1;
-    curr_generation[6][5] = 1;
-    break;
+bool button_is_pressed(int x_button, int y_button, int x_pressed,
+                       int y_pressed) {
+  bool is_pressed = false;
+
+  if (x_pressed > x_button && x_pressed < x_button + BUTTON_X &&
+      y_pressed > y_button && y_pressed < y_button + BUTTON_X) {
+    is_pressed = true;
   }
-    //  Small exploder
-  case 2: {
-    curr_generation[3][4] = 1;
-    curr_generation[4][3] = 1;
-    curr_generation[4][4] = 1;
-    curr_generation[4][5] = 1;
-    curr_generation[5][3] = 1;
-    curr_generation[5][5] = 1;
-    curr_generation[6][4] = 1;
-  }
-  // Exploder
-  case 3: {
-    curr_generation[2][2] = 1;
-    curr_generation[2][4] = 1;
-    curr_generation[2][6] = 1;
-    curr_generation[3][2] = 1;
-    curr_generation[3][6] = 1;
-    curr_generation[4][2] = 1;
-    curr_generation[4][6] = 1;
-    curr_generation[5][2] = 1;
-    curr_generation[5][6] = 1;
-    curr_generation[6][2] = 1;
-    curr_generation[6][4] = 1;
-    curr_generation[6][6] = 1;
-  }
-  default:
-    break;
-  }
+
+  return is_pressed;
+};
+
+struct Coordinates {
+  int x;
+  int y;
+};
+
+int mouse_pressed_coordinates(Coordinates &coordinates,
+                              sf::RenderWindow &window) {
+  coordinates.x = sf::Mouse::getPosition(window).x;
+  coordinates.y = sf::Mouse::getPosition(window).y;
 }
 
 void get_pattern(std::vector<std::vector<int>> &curr_generation,
                  sf::RenderWindow &window) {
-  int x = 0;
-  int y = 0;
+
+  Coordinates coordinates;
 
   draw_galaxy(window);
-  draw_button(650, 550, window);
+  draw_button(START_BUTTON_X, START_BUTTON_Y, "START", window);
+  draw_button(NEXT_BUTTON_X, NEXT_BUTTON_Y, "CLEAR", window);
   window.display();
 
   sf::Event event;
-  while (window.waitEvent(event) && x < 25) {
+  while (window.waitEvent(event) &&
+         !button_is_pressed(START_BUTTON_X, START_BUTTON_Y, coordinates.x,
+                            coordinates.y)) {
     switch (event.type) {
     case sf::Event::Closed: {
       window.close();
@@ -224,16 +213,15 @@ void get_pattern(std::vector<std::vector<int>> &curr_generation,
     }
     case sf::Event::MouseButtonPressed: {
       if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-        x = sf::Mouse::getPosition(window).x / CELL_SIZE;
-        y = sf::Mouse::getPosition(window).y / CELL_SIZE;
-        if (x < 25) {
-          curr_generation[y][x] = 1;
+        mouse_pressed_coordinates(coordinates, window);
+        int cell_x = coordinates.x / CELL_SIZE;
+        int cell_y = coordinates.y / CELL_SIZE;
+        if (cell_x < FIELD_SIZE) {
+          curr_generation[cell_y][cell_x] = 1;
           draw_life(curr_generation, window);
           window.display();
           life_to_console(curr_generation);
         }
-        std::cout << x << "\n";
-        std::cout << y << "\n";
       }
       break;
     }
@@ -268,9 +256,9 @@ int main() {
 
     get_pattern(curr_generation, window);
 
-    int generation_counter = 0;
-    do {
+    Coordinates coordinates;
 
+    do {
       check_window(window);
 
       prev_generation = curr_generation;
@@ -279,19 +267,29 @@ int main() {
       life_to_console(curr_generation);
 
       window.clear();
+
       draw_galaxy(window);
-      draw_button(650, 550, window);
+
+      draw_button(START_BUTTON_X, START_BUTTON_Y, "START", window);
+      draw_button(NEXT_BUTTON_X, NEXT_BUTTON_Y, "CLEAR", window);
+
       draw_life(curr_generation, window);
+
       window.display();
+
+      coordinates.x = 0;
+      coordinates.y = 0;
+
+      if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+        mouse_pressed_coordinates(coordinates, window);
+      }
+
       usleep(200000);
-
-      generation_counter++;
-
-    } while (!(curr_generation == prev_generation) && window.isOpen());
-    sleep(3);
+    } while (!(curr_generation == prev_generation) && window.isOpen() &&
+             !button_is_pressed(NEXT_BUTTON_X, NEXT_BUTTON_Y, coordinates.x,
+                                coordinates.y));
+    sleep(1);
     window.clear();
-    text_display("Game is over", 250, 250, 36, window);
-    sleep(3);
   }
 
   check_window(window);
