@@ -13,8 +13,8 @@ const auto BUTTON_X = 150;
 const auto BUTTON_Y = 50;
 const auto START_BUTTON_X = 650;
 const auto START_BUTTON_Y = 550;
-const auto NEXT_BUTTON_X = 650;
-const auto NEXT_BUTTON_Y = 25;
+const auto CLEAR_BUTTON_X = 650;
+const auto CLEAR_BUTTON_Y = 25;
 
 int count_neighbours(int curr_i, int curr_j,
                      std::vector<std::vector<int>> &generation) {
@@ -199,7 +199,7 @@ void get_pattern(std::vector<std::vector<int>> &curr_generation,
 
   draw_galaxy(window);
   draw_button(START_BUTTON_X, START_BUTTON_Y, "START", window);
-  draw_button(NEXT_BUTTON_X, NEXT_BUTTON_Y, "CLEAR", window);
+  draw_button(CLEAR_BUTTON_X, CLEAR_BUTTON_Y, "CLEAR", window);
   window.display();
 
   sf::Event event;
@@ -271,7 +271,7 @@ int main() {
       draw_galaxy(window);
 
       draw_button(START_BUTTON_X, START_BUTTON_Y, "START", window);
-      draw_button(NEXT_BUTTON_X, NEXT_BUTTON_Y, "CLEAR", window);
+      draw_button(CLEAR_BUTTON_X, CLEAR_BUTTON_Y, "CLEAR", window);
 
       draw_life(curr_generation, window);
 
@@ -286,7 +286,7 @@ int main() {
 
       usleep(200000);
     } while (!(curr_generation == prev_generation) && window.isOpen() &&
-             !button_is_pressed(NEXT_BUTTON_X, NEXT_BUTTON_Y, coordinates.x,
+             !button_is_pressed(CLEAR_BUTTON_X, CLEAR_BUTTON_Y, coordinates.x,
                                 coordinates.y));
     sleep(1);
     window.clear();
