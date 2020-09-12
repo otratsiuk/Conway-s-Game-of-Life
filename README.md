@@ -2,16 +2,16 @@
   
 ***  
   
-##### My implementation of the Game of Life cellular automaton:  
+#### My implementation of the Game of Life cellular automaton:  
   
 ![life](life.gif)  
   
 ***  
   
-##### To read more about the Game of Life:  
+#### To read more about the Game of Life:  
 https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life  
   
-##### How to run:  
+#### How to run:  
 Clone the repository:  
   
 ```
