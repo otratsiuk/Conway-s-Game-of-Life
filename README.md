@@ -18,7 +18,7 @@ Clone the repository:
 git clone git@github.com:otratsiuk/Conway-s-Game-of-Life.git  
 ```
   
-Compile an run:  
+Compile and run:  
 
 ```
 cd Conway-s-Game-of-Life  
