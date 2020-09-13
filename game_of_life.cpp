@@ -47,20 +47,6 @@ int count_neighbours(int curr_i, int curr_j,
   return sum;
 }
 
-int count_alive_cells(std::vector<std::vector<int>> cells) {
-  int alive_cells = 0;
-
-  for (auto &rows : cells) {
-    for (auto &cell : cells[0]) {
-      if (cell == 1) {
-        alive_cells++;
-      }
-    }
-  }
-
-  return alive_cells;
-}
-
 std::vector<std::vector<int>>
 create_next_generation(std::vector<std::vector<int>> curr_generation) {
 
